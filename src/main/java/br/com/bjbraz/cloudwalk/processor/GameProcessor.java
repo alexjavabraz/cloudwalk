@@ -8,9 +8,8 @@ import br.com.bjbraz.cloudwalk.repository.GameRepository;
 import br.com.bjbraz.cloudwalk.util.FileProcessorUtil;
 import lombok.extern.log4j.Log4j2;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class GameProcessor extends Thread {
@@ -58,12 +57,21 @@ public class GameProcessor extends Thread {
     }
 
     private void adjustKillCount() {
-        for(GamePlayer gp : currentGame.getPlayers()){
-            if(killedByWorld.containsKey(gp.getName())){
-                gp.setKills(gp.getKills() - killedByWorld.get(gp.getName()));
-                gamePlayerRepository.save(gp);
-            }
-        }
+
+       killedByWorld.keySet().stream().forEach(item -> {
+           GamePlayer gamePlayer = null;
+
+           if(currentGame.getPlayers().contains(item)){
+               gamePlayer = currentGame.getPlayers().stream().filter( player -> player.getName().equals(item) ).collect(Collectors.toList()).get(0);
+           }else{
+               gamePlayer = new GamePlayer();
+               gamePlayer.setGame(currentGame);
+               gamePlayer.setName(item);
+           }
+           gamePlayer.setKills(gamePlayer.getKills() - killedByWorld.get(item));
+           gamePlayerRepository.save(gamePlayer);
+       });
+
     }
 
     private void createNewGame() {
